@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { weddingConfig } from "@/lib/config";
 import { Divider, Heart } from "@/components/Ornament";
 import Image from "next/image";
+import { useGuest } from "@/components/GuestContext";
+import { isLatinName } from "@/lib/guests";
 
 /** شکوفه‌های طلایی چهارپر (موقعیت ثابت تا هایدریشن به‌هم نریزد) */
 const PETALS = [
@@ -49,6 +51,81 @@ function ChevronDown({ className = "" }: { className?: string }) {
   );
 }
 
+/** اگر کاربر تنظیم «کاهش انیمیشن» را روشن کرده باشد، پرش فوری می‌کنیم */
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/**
+ * اسکرول با مدت زمان دلخواه و منحنی نرم (easeInOutCubic).
+ * (رفتار smooth مرورگر مدت‌زمان قابل تنظیمی ندارد و برای این سناریو زیادی سریع است.)
+ * خروجی: تابع لغو انیمیشن.
+ */
+function scrollToY(targetY: number, duration: number, onDone?: () => void) {
+  const startY = window.scrollY;
+  const maxY = Math.max(
+    0,
+    document.documentElement.scrollHeight - window.innerHeight,
+  );
+  const endY = Math.min(Math.max(targetY, 0), maxY);
+  const delta = endY - startY;
+
+  // در این پروژه «html { scroll-behavior: smooth }» فعال است؛ اگر آن را موقتاً
+  // غیرفعال نکنیم، هر فریم خودش برای خودش یک انیمیشن نرم جدید می‌سازد و اسکرول
+  // می‌پرد/گیر می‌کند. پس تا پایان انیمیشن رفتار را روی auto می‌گذاریم.
+  const root = document.documentElement;
+  const prevBehavior = root.style.scrollBehavior;
+  const restore = () => {
+    root.style.scrollBehavior = prevBehavior;
+  };
+
+  if (duration <= 0 || Math.abs(delta) < 1) {
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, endY);
+    restore();
+    onDone?.();
+    return () => {};
+  }
+
+  root.style.scrollBehavior = "auto";
+
+  // شروع و پایان نرم، میانه سریع‌تر
+  const ease = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  let raf = 0;
+  let cancelled = false;
+  const start = performance.now();
+
+  const step = (now: number) => {
+    if (cancelled) return;
+    const t = Math.min((now - start) / duration, 1);
+    window.scrollTo(0, startY + delta * ease(t));
+    if (t < 1) {
+      raf = window.requestAnimationFrame(step);
+    } else {
+      restore();
+      onDone?.();
+    }
+  };
+  raf = window.requestAnimationFrame(step);
+
+  return () => {
+    cancelled = true;
+    window.cancelAnimationFrame(raf);
+    restore();
+  };
+}
+
+/**
+ * مدت زمان فرایند باز شدن با کلیک/لمس (جمعاً ۳ ثانیه):
+ * ۱٫۸ ثانیه باز شدن پاکت + ۰٫۴ ثانیه مکث + ۰٫۸ ثانیه رفتن به بخش دوم
+ */
+const OPEN_SCROLL_MS = 3500;
+const OPEN_HOLD_MS = 1200;
+const NEXT_SCROLL_MS = 1400;
+
 /**
  * صحنه آغازین: پاکت سه‌لتی واقع‌گرایانه که با اسکرول باز می‌شود.
  * ترتیب انیمیشن با پیشرفت اسکرول:
@@ -56,6 +133,89 @@ function ChevronDown({ className = "" }: { className?: string }) {
  */
 export default function Envelope() {
   const ref = useRef<HTMLDivElement>(null);
+  /** مهمان فعلی (از آدرس ?guest=…) — بدون آن، نسخه عمومی نمایش داده می‌شود */
+  const guest = useGuest();
+  // قفل ضد کلیک تکراری + تایمر رفتن خودکار به بخش دوم
+  const busyRef = useRef(false);
+  const timerRef = useRef<number | null>(null);
+  const cancelAnimRef = useRef<(() => void) | null>(null);
+
+  // پاک‌سازی هنگام خروج از صفحه + واگذاری کنترل به کاربر اگر خودش اسکرول/لمس کند
+  useEffect(() => {
+    const stop = () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (cancelAnimRef.current) {
+        cancelAnimRef.current();
+        cancelAnimRef.current = null;
+      }
+      busyRef.current = false;
+    };
+    const onInterrupt = () => {
+      if (busyRef.current) stop();
+    };
+    window.addEventListener("wheel", onInterrupt, { passive: true });
+    window.addEventListener("touchmove", onInterrupt, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", onInterrupt);
+      window.removeEventListener("touchmove", onInterrupt);
+      stop();
+    };
+  }, []);
+
+  /**
+   * با کلیک/لمس روی کارت (جمعاً حدود ۳ ثانیه):
+   * ۱) باز شدن تدریجی پاکت تا نقطه‌ای که دو لت کامل باز می‌شوند
+   * ۲) مکث کوتاه روی کارت
+   * ۳) رفتن خودکار و نرم به بخش دوم (کارت دعوت)
+   */
+  const handleOpenCard = () => {
+    const el = ref.current as HTMLElement | null;
+    if (!el || busyRef.current) return;
+
+    const vh = window.innerHeight;
+    const sectionTop = el.getBoundingClientRect().top + window.scrollY;
+    const openAt = sectionTop + Math.max(el.offsetHeight - vh, 0) * 0.46;
+    const next = el.nextElementSibling as HTMLElement | null;
+    const nextTop = next
+      ? next.getBoundingClientRect().top + window.scrollY
+      : sectionTop + el.offsetHeight;
+
+    // مدت هر مرحله (در حالت «کاهش انیمیشن» صفر می‌شود)
+    const reduced = prefersReducedMotion();
+    const openMs = reduced ? 0 : OPEN_SCROLL_MS;
+    const holdMs = reduced ? 0 : OPEN_HOLD_MS;
+    const nextMs = reduced ? 0 : NEXT_SCROLL_MS;
+
+    // اگر پاکت از قبل باز شده، فقط نرم به بخش بعدی می‌رویم
+    if (window.scrollY >= openAt - 40) {
+      busyRef.current = true;
+      cancelAnimRef.current = scrollToY(nextTop, nextMs, () => {
+        cancelAnimRef.current = null;
+        busyRef.current = false;
+      });
+      return;
+    }
+
+    busyRef.current = true;
+
+    // ۱) باز شدن پاکت (چرخش لت‌ها به پیشرفت اسکرول گره خورده است)
+    cancelAnimRef.current = scrollToY(openAt, openMs, () => {
+      cancelAnimRef.current = null;
+      // ۲) مکث کوتاه تا باز شدن کامل دیده شود
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null;
+        // ۳) رفتن خودکار و نرم به بخش دوم (کارت دعوت)
+        cancelAnimRef.current = scrollToY(nextTop, nextMs, () => {
+          cancelAnimRef.current = null;
+          busyRef.current = false;
+        });
+      }, holdMs);
+    });
+  };
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end end"],
@@ -130,14 +290,30 @@ export default function Envelope() {
           style={{ scaleX: scrollYProgress }}
         />
 
+        {/* سطح قابل کلیک/لمس روی کارت: پاکت را باز می‌کند و سپس خودکار به بخش دوم می‌رود */}
+        <button
+          type="button"
+          onClick={handleOpenCard}
+          aria-label="باز کردن دعوت‌نامه و رفتن به جزئیات مراسم"
+          className="absolute inset-0 z-40 cursor-pointer bg-transparent outline-none"
+        />
+
         {/* عنوان بالای صفحه */}
         <motion.div
           style={{ opacity: topTitleOpacity }}
           className="absolute top-8 px-6 text-center sm:top-12"
         >
+        {!guest && (
           <p className="font-display text-xl text-cocoa-800 sm:text-2xl">
             دعوتنامه‌ای برای شما رسیده است
           </p>
+        )}
+        {guest && (
+          <p className="font-display text-xl text-cocoa-800 sm:text-2xl">
+            دعوت‌نامه‌ای برای{" "}
+            <span className="text-gold-deep">{guest.name}</span> رسیده است
+          </p>
+        )}
           <Divider className="mt-4" />
         </motion.div>
 
@@ -259,6 +435,27 @@ export default function Envelope() {
                         height={160}
                         className="absolute left-4 top-4 h-[160px] w-[160px] rotate-180 object-contain"
                       />
+                      {/* ردیف اختصاصی مهمان: پایین لت چپ پاکت */}
+                      {guest && (
+                        <div className="pointer-events-none absolute inset-x-3 bottom-4 flex flex-col items-center">
+                          <span className="text-[9px] leading-5 text-cocoa-600">
+                            تقدیم به
+                          </span>
+                          <span
+                            className={
+                              isLatinName(guest.name)
+                                ? "font-script text-gold-deep block text-[17px] leading-tight"
+                                : "font-display text-cocoa-900 block text-[13px] leading-snug sm:text-sm"
+                            }
+                          >
+                            {guest.name}
+                          </span>
+                          <span
+                            className="mt-1 block h-px w-10 bg-gradient-to-r from-transparent via-gold/70 to-transparent"
+                            aria-hidden
+                          />
+                        </div>
+                      )}
                     </div>
                     {/* داخل لت */}
                     <div
@@ -426,6 +623,11 @@ export default function Envelope() {
             به نام خداوند عشق و مهربانی
           </p>
           <Divider className="my-5 w-full max-w-xs" />
+          {guest && (
+            <p className="mt-1 rounded-full border border-white/40 bg-white/15 px-4 py-1 text-xs text-white backdrop-blur-sm sm:text-sm">
+              تقدیم به <span className="font-display text-white-gold">{guest.name}</span>
+            </p>
+          )}
           <h1 className="font-display text-5xl leading-snug drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:text-7xl">
             <span className="text-white-gold">{weddingConfig.bride}</span>
             <span className="mx-3 align-middle text-3xl text-white sm:text-4xl">
@@ -448,7 +650,7 @@ export default function Envelope() {
           </p>
           <div className="mt-10 flex flex-col items-center gap-2 text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)]">
             <span className="text-xs">
-              برای دیدن جزئیات جشن به اسکرول ادامه دهید
+              برای دیدن جزئیات جشن، لمس کنید
             </span>
             <motion.span
               animate={{ y: [0, 8, 0] }}
@@ -468,7 +670,11 @@ export default function Envelope() {
           style={{ opacity: hintOpacity }}
           className="absolute bottom-7 flex flex-col items-center gap-2 text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)] sm:bottom-9"
         >
-          <span className="text-sm">اسکرول کنید تا دعوت‌نامه باز شود</span>
+          <span className="text-center text-sm leading-6">
+            لمس کنید یا اسکرول کنید
+            <br />
+            تا دعوت‌نامه باز شود
+          </span>
           <motion.span
             animate={{ y: [0, 8, 0] }}
             transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}

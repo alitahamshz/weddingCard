@@ -1,0 +1,15 @@
+[
+  {
+    "slug": "pedram",
+    "name": "پدرام",
+    "nameEn": "Pedram",
+    "seats": 2,
+    "side": "داماد"
+  },
+  {
+    "slug": "khalh-mrjan",
+    "name": "خاله مرجان",
+    "seats": 4,
+    "side": "داماد"
+  }
+]

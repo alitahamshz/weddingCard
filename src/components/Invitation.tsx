@@ -3,10 +3,13 @@
 import { motion } from 'framer-motion';
 import { weddingConfig } from '@/lib/config';
 import { Corner, Divider, Heart } from '@/components/Ornament';
+import { useGuest } from '@/components/GuestContext';
+import { toFaDigits } from '@/lib/utils';
 import Image from 'next/image';
 
 /** کارت اصلی دعوت با قاب طلایی */
 export default function Invitation() {
+  const guest = useGuest();
   return (
     <section className="relative bg-gradient-to-b from-[#FFFDF8] via-[#FAF3E3] to-[#FFFDF8] px-4 py-20 sm:py-28">
       <motion.div
@@ -29,6 +32,21 @@ export default function Invitation() {
           به نام خداوند عشق و مهربانی
         </p>
         <Divider className="my-6" />
+
+        {guest && (
+          <p className="mt-1 text-sm text-stone-500">
+            تقدیم به{' '}
+            <span className="font-display text-base text-gold-deep">
+              {guest.name}
+            </span>
+            {guest.seats ? (
+              <span className="text-stone-400">
+                {' '}
+                • ظرفیت {toFaDigits(guest.seats)} نفر
+              </span>
+            ) : null}
+          </p>
+        )}
 
         <p className="mx-auto max-w-md text-[15px] leading-9 text-stone-500">
           دست در دست هم، با قلبی لبریز از عشق

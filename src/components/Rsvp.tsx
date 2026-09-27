@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toFaDigits } from '@/lib/utils';
 import { Divider } from '@/components/Ornament';
+import { useGuest } from '@/components/GuestContext';
 
 type Entry = {
   name: string;
@@ -26,7 +27,9 @@ function loadEntries(): Entry[] {
 
 /** فرم اعلام حضور مهمانان (ذخیره‌سازی نمایشی در مرورگر) */
 export default function Rsvp() {
-  const [name, setName] = useState('');
+  /** مهمان فعلی؛ نامش از قبل در فرم نوشته می‌شود */
+  const guest = useGuest();
+  const [name, setName] = useState(() => guest?.name ?? '');
   const [guests, setGuests] = useState(0);
   const [attending, setAttending] = useState<'yes' | 'no'>('yes');
   const [message, setMessage] = useState('');
@@ -76,13 +79,14 @@ export default function Rsvp() {
     setDone(false);
   };
 
+  /** سقف همراهان طبق ظرفیت همین مهمان (اگر تعیین نشده باشد، بدون سقف) */
   const guestOptions = [
     'فقط خودم',
     '۱ همراه',
     '۲ همراه',
     '۳ همراه',
     '۴ همراه',
-  ];
+  ].slice(0, guest?.seats ? Math.min(guest.seats, 5) : 5);
 
   return (
     <section
@@ -207,6 +211,11 @@ export default function Rsvp() {
                     </option>
                   ))}
                 </select>
+                {guest?.seats ? (
+                  <p className="mt-2 text-xs text-slate-400">
+                    ظرفیت تعیین‌شده برای شما: {toFaDigits(guest.seats)} نفر
+                  </p>
+                ) : null}
               </div>
             )}
 

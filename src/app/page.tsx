@@ -1,23 +1,44 @@
-import Envelope from '@/components/Envelope';
-import Invitation from '@/components/Invitation';
-import Countdown from '@/components/Countdown';
-import Details from '@/components/Details';
-import Schedule from '@/components/Schedule';
-import Rsvp from '@/components/Rsvp';
-import Footer from '@/components/Footer';
-import MusicPlayer from '@/components/MusicPlayer';
+import type { Metadata } from 'next';
+import InvitationPage from '@/components/InvitationPage';
+import { getGuest } from '@/lib/guests';
+import { weddingConfig } from '@/lib/config';
 
-export default function Page() {
-  return (
-    <main className="overflow-x-clip">
-      <Envelope />
-      <Invitation />
-      <Countdown />
-      <Details />
-      <Schedule />
-      <Rsvp />
-      <Footer />
-      <MusicPlayer />
-    </main>
-  );
+type PageProps = {
+  searchParams: Promise<{ guest?: string | string[] }>;
+};
+
+/** اولین مقدار (در صورت تکرار پارامتر) را برمی‌گرداند */
+async function readSlug(searchParams: PageProps['searchParams']) {
+  const { guest } = await searchParams;
+  return Array.isArray(guest) ? guest[0] : guest;
+}
+
+const baseTitle = `جشن عروسی ${weddingConfig.bride} و ${weddingConfig.groom}`;
+
+export async function generateMetadata({
+  searchParams,
+}: PageProps): Promise<Metadata> {
+  const guest = getGuest(await readSlug(searchParams));
+  if (!guest) {
+    return {
+      title: baseTitle,
+      description: `با کمال مسرت شما را به جشن عروسی ${weddingConfig.bride} و ${weddingConfig.groom} دعوت می‌کنیم — ${weddingConfig.dateFa}`,
+    };
+  }
+  // لینک‌های اختصاصی مهمان‌ها در گوگل ایندکس نشوند
+  return {
+    title: `دعوت‌نامهٔ ویژهٔ ${guest.name} | ${baseTitle}`,
+    description: `دعوت‌نامهٔ اختصاصی ${guest.name} برای جشن عروسی ${weddingConfig.bride} و ${weddingConfig.groom} — ${weddingConfig.dateFa}`,
+    robots: { index: false, follow: false },
+  };
+}
+
+/**
+ * آدرس کارت:  /?guest=pedram  (بدون پارامتر = نسخه عمومی)
+ * کارت هر مهمان سمت سرور ساخته می‌شود تا نام او بدون پرش و فلش، همراه
+ * همان HTML اولیه بیاید.
+ */
+export default async function Page({ searchParams }: PageProps) {
+  const guest = getGuest(await readSlug(searchParams));
+  return <InvitationPage guest={guest} />;
 }
