@@ -251,15 +251,23 @@ export default function GuestAdmin({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guests: toPublicGuests(list) }),
       });
+      const data = await res.json().catch(() => null);
       if (res.ok) {
-        setNotice({
-          kind: 'ok',
-          text: 'فهرست مهمان‌ها در فایل src/data/guests.json ذخیره شد.',
-        });
+        if (data?.destination === 'database') {
+          setNotice({
+            kind: 'ok',
+            text: '✓ فهرست مهمان‌ها با موفقیت در دیتابیس آنلاین (Upstash) ذخیره شد و کارت‌ها فعال شدند.',
+          });
+        } else {
+          setNotice({
+            kind: 'ok',
+            text: 'فهرست مهمان‌ها در فایل src/data/guests.json ذخیره شد.',
+          });
+        }
       } else if (res.status === 501) {
         setNotice({
           kind: 'warn',
-          text: 'این سرور اجازهٔ نوشتن فایل ندارد (مثل Vercel). فایل guests.json را دانلود کنید، در src/data جایگزین کنید و دیپلوی کنید.',
+          text: 'دیتابیس آنلاین وصل نیست و سرور ورسل دیسک فقط‌خواندنی دارد. برای ذخیره آنلاین، کلیدهای UPSTASH_REDIS را در Vercel اضافه کنید یا فایل JSON را دانلود و در پروژه قرار دهید.',
         });
       } else if (res.status === 401) {
         setNotice({
@@ -588,21 +596,10 @@ export default function GuestAdmin({
       </section>
       {/* انتشار روی سایت */}
       <section className="rounded-2xl border border-gold/40 bg-white/85 p-5">
-        <h2 className="font-display text-lg text-cocoa-900">انتشار روی سایت</h2>
-        <ol className="mt-3 list-inside list-decimal space-y-1 text-xs leading-6 text-slate-600">
-          <li>
-            روی سیستم خودتان «ذخیره در فایل پروژه» را بزنید تا فایل{' '}
-            <bdi>src/data/guests.json</bdi> به‌روز شود.
-          </li>
-          <li>
-            اگر سایت روی هاست است، «دانلود guests.json» را بزنید و همین فایل را
-            در <bdi>src/data</bdi> جایگزین کنید.
-          </li>
-          <li>
-            تغییرات را commit و push کنید تا سایت دوباره ساخته شود؛ از آن لحظه
-            لینک همهٔ مهمان‌ها فعال است.
-          </li>
-        </ol>
+        <h2 className="font-display text-lg text-cocoa-900">ذخیره و انتشار روی سایت</h2>
+        <p className="mt-2 text-xs leading-6 text-slate-600">
+          با زدن دکمهٔ «ذخیره در سایت»، اطلاعات مستقیماً ذخیره شده و لینک کارت‌ها بلافاصله برای مهمان‌ها فعال می‌شوند (در صورت تنظیم Upstash Redis در Vercel).
+        </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -611,7 +608,7 @@ export default function GuestAdmin({
             disabled={saving}
             className="rounded-xl bg-gradient-to-l from-gold-dark via-gold to-gold-dark bg-[length:200%_auto] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-gold/30 transition-all duration-300 hover:bg-right disabled:opacity-60"
           >
-            {saving ? 'در حال ذخیره…' : 'ذخیره در فایل پروژه'}
+            {saving ? 'در حال ذخیره…' : 'ذخیره در سایت'}
           </button>
           <button
             type="button"

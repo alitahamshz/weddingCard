@@ -1,19 +1,25 @@
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/admin-auth';
 import { normalizeGuest, toPublicGuest, type Guest } from '@/lib/guests';
+import { getAllGuests, saveGuests, isDbConfigured } from '@/lib/guests-store';
 
 export const runtime = 'nodejs';
 
-const FILE = path.join(process.cwd(), 'src', 'data', 'guests.json');
+/** دریافت فهرست فعلی مهمان‌ها از دیتابیس یا فایل */
+export async function GET() {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+  }
 
-/**
- * نوشتن فهرست مهمان‌ها در فایل src/data/guests.json.
- * این کار فقط وقتی ممکن است که پروژه روی سیستم خودتان اجرا شود؛
- * روی هاست‌های serverless (مثل Vercel) فایل قابل نوشتن نیست و در آن صورت
- * کد 501 برمی‌گردد تا پنل، راه دانلود فایل را نشان دهد.
- */
+  const list = await getAllGuests();
+  return NextResponse.json({
+    ok: true,
+    guests: list,
+    dbConfigured: isDbConfigured(),
+  });
+}
+
+/** ذخیرهٔ فهرست مهمان‌ها در دیتابیس یا فایل */
 export async function PUT(request: Request) {
   if (!(await isAdmin())) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
@@ -32,10 +38,15 @@ export async function PUT(request: Request) {
     .map(toPublicGuest);
 
   try {
-    await fs.writeFile(FILE, `${JSON.stringify(list, null, 2)}\n`, 'utf8');
-  } catch {
+    const result = await saveGuests(list);
+    return NextResponse.json({
+      ok: true,
+      count: list.length,
+      destination: result.destination,
+    });
+  } catch (err) {
+    console.error('Error saving guests:', err);
     return NextResponse.json({ ok: false, error: 'read-only' }, { status: 501 });
   }
-
-  return NextResponse.json({ ok: true, count: list.length });
 }
+

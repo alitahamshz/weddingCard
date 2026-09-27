@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import InvitationPage from '@/components/InvitationPage';
-import { getGuest } from '@/lib/guests';
+import { findGuestBySlug } from '@/lib/guests-store';
 import { weddingConfig } from '@/lib/config';
 
 type PageProps = {
@@ -18,7 +18,7 @@ const baseTitle = `جشن عروسی ${weddingConfig.bride} و ${weddingConfig.g
 export async function generateMetadata({
   searchParams,
 }: PageProps): Promise<Metadata> {
-  const guest = getGuest(await readSlug(searchParams));
+  const guest = await findGuestBySlug(await readSlug(searchParams));
   if (!guest) {
     return {
       title: baseTitle,
@@ -39,6 +39,7 @@ export async function generateMetadata({
  * همان HTML اولیه بیاید.
  */
 export default async function Page({ searchParams }: PageProps) {
-  const guest = getGuest(await readSlug(searchParams));
+  const guest = await findGuestBySlug(await readSlug(searchParams));
   return <InvitationPage guest={guest} />;
 }
+
