@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #c9a227;
+  --gold-light: #e9ce7a;
+  --cream: #faf5ea;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #fffdf8;
+  overflow-x: clip;
+}
+
+::selection {
+  background: rgba(201, 162, 39, 0.35);
+}
+
+/* تیترها با وزیرمتن بولد (مدرن) */
+.font-display {
+  font-weight: 700;
+}
+
+/* متن طلایی گرادیانی */
+.text-gold-gradient {
+  background: linear-gradient(
+    120deg,
+    #8a6d1b 0%,
+    #c9a227 22%,
+    #f6e7b2 50%,
+    #c9a227 78%,
+    #8a6d1b 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* متن طلایی پررنگ (خوانا روی پس‌زمینه سفید) */
+.text-gold-deep {
+  background: linear-gradient(
+    120deg,
+    #7a5f16 0%,
+    #b08d2e 30%,
+    #ebd27e 50%,
+    #b08d2e 70%,
+    #7a5f16 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* فونت دست‌نویس رمانتیک انگلیسی (الهام از نستعلیق) برای اسم‌ها */
+.font-script {
+  font-family: "Great Vibes", cursive;
+}
+
+/* لت پاکت به‌عنوان مرجع عرض برای اندازهٔ سیال نام‌ها (واحد cqw) */
+.flap-face {
+  container-type: inline-size;
+}
+
+/* نام روی لت پاکت: اندازه با عرض لت مقیاس می‌شود تا حروف
+   در هیچ عرضی از دو طرف بریده نشوند و به لبهٔ کاغذ نچسبند */
+.flap-face .flap-name {
+  font-family: "Great Vibes", cursive;
+  font-size: clamp(16px, 18cqw, 36px);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* متن گرادیان سفید-طلایی برای روی والپیپر (خوانا و درخشان) */
+.text-white-gold {
+  background: linear-gradient(
+    120deg,
+    #ffffff 0%,
+    #f9edc0 30%,
+    #e9ce7a 50%,
+    #ffffff 72%,
+    #f3e0a0 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* بافت کاغذ (گرین ظریف) برای واقعی‌تر شدن دعوت‌نامه */
+.paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+
+/* سطح کاغذی واقع‌گرایانه پاکت: رنگ عاجی + افت نور (بدون خال و دایره) */
+.paper-surface {
+  background-color: #fffdf7;
+  background-image: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(250, 244, 230, 0.45) 45%,
+    rgba(176, 141, 46, 0.12) 100%
+  );
+}
+
+/* گل چهارپر طلایی (شکوفه‌های در حال ریزش) */
+.blossom {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.blossom-1 {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%23D9B545'%3E%3Cellipse cx='20' cy='10' rx='6' ry='9'/%3E%3Cellipse cx='20' cy='30' rx='6' ry='9'/%3E%3Cellipse cx='10' cy='20' rx='9' ry='6'/%3E%3Cellipse cx='30' cy='20' rx='9' ry='6'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%238A6D1B'/%3E%3C/svg%3E");
+}
+.blossom-2 {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%23F1DC9A'%3E%3Cellipse cx='20' cy='10' rx='6' ry='9'/%3E%3Cellipse cx='20' cy='30' rx='6' ry='9'/%3E%3Cellipse cx='10' cy='20' rx='9' ry='6'/%3E%3Cellipse cx='30' cy='20' rx='9' ry='6'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%23B08D2E'/%3E%3C/svg%3E");
+}
+
+/* وینیت طلایی ملایم دور صحنه آغازین */
+.scene-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 42%,
+    rgba(150, 120, 60, 0.22) 100%
+  );
+}
+
+/* بارش شکوفه با حرکت موجی ملایم */
+@keyframes petal-fall {
+  0% {
+    transform: translate(0, -6vh) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(2vw, 25vh) rotate(90deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-2vw, 55vh) rotate(180deg);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate(2vw, 85vh) rotate(270deg);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(0, 108vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+.petal {
+  animation-name: petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* شناور ملایم */
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-floaty {
+  animation: floaty 5s ease-in-out infinite;
+}
+.animate-floaty-slow {
+  animation: floaty 8s ease-in-out infinite;
+}
+
+/* میله‌های اکولایزر دکمه موزیک */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+/* پالس ملایم دور دکمه موزیک */
+@keyframes soft-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  80%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+.animate-soft-ping {
+  animation: soft-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .petal,
+  .animate-floaty,
+  .animate-floaty-slow,
+  .eq-bar,
+  .animate-soft-ping {
+    animation: none !important;
+  }
+}

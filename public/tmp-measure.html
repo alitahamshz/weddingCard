@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'GV';src:url('/tmp-gv.woff2') format('woff2');font-display:block;}
+#out{font-family:monospace}
+</style></head>
+<body><div id="out">pending</div>
+<script>
+function report(){
+  const c=document.createElement('canvas');
+  const ctx=c.getContext('2d');
+  const s=[];
+  [28,36].forEach(function(px){
+    ['AREZOO','ALI'].forEach(function(n){
+      ctx.font=px+'px GV';
+      const m=ctx.measureText(n);
+      const tracked=m.width + 0.02*px*(n.length-1);
+      const ink=Math.abs(m.actualBoundingBoxLeft)+m.actualBoundingBoxRight;
+      s.push(n+'@'+px+' adv='+m.width.toFixed(1)+' tracked='+tracked.toFixed(1)+' ink='+ink.toFixed(1)+' inkL='+Math.abs(m.actualBoundingBoxLeft).toFixed(1)+' inkR='+m.actualBoundingBoxRight.toFixed(1)+' asc='+m.fontBoundingBoxAscent.toFixed(1)+' desc='+m.fontBoundingBoxDescent.toFixed(1)+' loaded='+document.fonts.check(px+'px GV'));
+    });
+  });
+  const txt='RESULTX '+s.join(' || ')+' ENDX';
+  document.getElementById('out').textContent=txt;
+  document.title=txt;
+}
+if(document.fonts && document.fonts.load){
+  document.fonts.load('28px GV').then(report).catch(function(e){ document.getElementById('out').textContent='RESULTX ERR '+e+' ENDX'; report(); });
+  setTimeout(report,1500);
+} else { report(); }
+</script></body></html>

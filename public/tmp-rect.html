@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0}iframe{width:390px;height:844px;border:0}#out{font:12px monospace}</style></head>
+<body><div id="out">pending</div><iframe id="f" src="/"></iframe>
+<script>
+var qs = new URLSearchParams(location.search);
+var W = parseInt(qs.get('w') || '390', 10);
+var H = parseInt(qs.get('h') || '844', 10);
+var f = document.getElementById('f');
+f.style.width = W + 'px';
+f.style.height = H + 'px';
+function run(){
+  try{
+    var d=document.getElementById('f').contentDocument;
+    var spans=Array.prototype.slice.call(d.querySelectorAll('span.font-script'));
+    var out=[];
+    spans.forEach(function(s){
+      var r=s.getBoundingClientRect();
+      var cs=getComputedStyle(s);
+      var p=s.parentElement, face=null;
+      while(p){ if(getComputedStyle(p).overflow==='hidden'){ face=p; break; } p=p.parentElement; }
+      var fr=face?face.getBoundingClientRect():null;
+      var ctx=document.createElement('canvas').getContext('2d');
+      ctx.font=cs.fontSize+' '+cs.fontFamily;
+      var m=ctx.measureText(s.textContent.trim());
+      var inkL=r.left-m.actualBoundingBoxLeft, inkR=r.left+m.actualBoundingBoxRight;
+      var inkW=inkR-inkL;
+      out.push(s.textContent.trim()+' size='+cs.fontSize+' spanW='+r.width.toFixed(1)+' inkW='+inkW.toFixed(1)
+        +' spanL='+r.left.toFixed(1)+' spanR='+r.right.toFixed(1)
+        +' faceL='+(fr?fr.left.toFixed(1):'?')+' faceR='+(fr?fr.right.toFixed(1):'?')+' faceW='+(fr?fr.width.toFixed(1):'?')
+        +' faceTop='+(fr?fr.top.toFixed(1):'?')+' faceBot='+(fr?fr.bottom.toFixed(1):'?')
+        +' inkLmargin='+(fr?(inkL-fr.left).toFixed(1):'?')+' inkRmargin='+(fr?(fr.right-inkR).toFixed(1):'?')
+        +' spanTop='+r.top.toFixed(1)+' spanBot='+r.bottom.toFixed(1));
+    });
+    var txt='RESULTX '+out.join(' || ')+' ENDX';
+    document.getElementById('out').textContent=txt;
+  }catch(e){ document.getElementById('out').textContent='RESULTX ERR '+e.message+' ENDX'; }
+}
+window.addEventListener('load',function(){ setTimeout(run,2500); });
+</script></body></html>
