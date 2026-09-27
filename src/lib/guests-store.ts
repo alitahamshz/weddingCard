@@ -7,16 +7,30 @@ import { normalizeGuest, type Guest } from './guests';
 const REDIS_KEY = 'wedding_guests_data';
 
 function getRedisClient(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.KV_REST_API_URL ||
+    process.env.weddingdb_KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.KV_REST_API_TOKEN ||
+    process.env.weddingdb_KV_REST_API_TOKEN;
+
   if (!url || !token) return null;
   return new Redis({ url, token });
 }
 
 export function isDbConfigured(): boolean {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.KV_REST_API_URL ||
+    process.env.weddingdb_KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.KV_REST_API_TOKEN ||
+    process.env.weddingdb_KV_REST_API_TOKEN;
+
+  return Boolean(url && token);
 }
 
 /** دریافت تمام مهمان‌ها: اگر دیتابیس وصل باشد از دیتابیس، وگرنه از فایل guests.json */
