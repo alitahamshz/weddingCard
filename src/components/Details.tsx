@@ -66,7 +66,7 @@ export default function Details() {
           rel="noreferrer"
           className="mt-8 inline-flex items-center gap-2 rounded-full bg-cocoa-900 px-8 py-3 text-sm text-cream shadow-lg transition hover:bg-cocoa-800"
         >
-          <PinIcon className="h-4 w-4" />
+          <PinIcon className="h-8 w-8" />
           مشاهده روی نقشه و مسیریابی
         </a>
       </div>
